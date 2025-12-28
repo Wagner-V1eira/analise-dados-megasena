@@ -94,7 +94,3 @@ Siga as instruções apresentadas no menu do terminal para interagir com a ferra
 - `requirements.txt`: Lista de dependências do Python.
 - `.env`: Arquivo de configuração de variáveis de ambiente (não versionado).
 - `.gitignore`: Arquivos e pastas ignorados pelo Git.
-
-## 🤝 Contribuição
-
-Sinta-se à vontade para abrir issues e pull requests para melhorias no código ou novas funcionalidades.
