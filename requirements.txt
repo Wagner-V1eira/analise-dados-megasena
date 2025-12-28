@@ -1,0 +1,8 @@
+pandas
+google-generativeai
+tabulate
+rich
+matplotlib
+seaborn
+numpy
+python-dotenv
