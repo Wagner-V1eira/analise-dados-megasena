@@ -297,6 +297,100 @@ def consultar_gemini(stats, df_dezenas):
     except Exception as e:
         print(f"Erro na conexão com Gemini: {e}")
 
+def analisar_jogo_usuario(df_dezenas, stats):
+    """Permite que o usuário digite um jogo e a IA analise."""
+    if not TEM_IA:
+        print("\n[ERRO] Configure a chave de API no código para usar esta função.")
+        return
+
+    print("\n--- ANÁLISE DE JOGO PERSONALIZADO ---")
+    print("Digite as 6 dezenas do seu jogo (separadas por espaço ou vírgula):")
+    entrada = input("> ")
+    
+    try:
+        numeros_usuario = [int(n) for n in entrada.replace(',', ' ').split()]
+        numeros_usuario = sorted(list(set(numeros_usuario))) 
+        
+        if len(numeros_usuario) != 6:
+            print(f"\n[ERRO] Você digitou {len(numeros_usuario)} números únicos. Por favor, digite exatamente 6 números entre 01 e 60.")
+            return
+            
+        if any(n < 1 or n > 60 for n in numeros_usuario):
+            print("\n[ERRO] Os números devem ser entre 01 e 60.")
+            return
+            
+    except ValueError:
+        print("\n[ERRO] Entrada inválida. Digite apenas números.")
+        return
+
+    print("\nCalculando métricas do seu jogo...")
+    
+    soma = sum(numeros_usuario)
+    pares = len([n for n in numeros_usuario if n % 2 == 0])
+    impares = len([n for n in numeros_usuario if n % 2 != 0])
+    
+    primos_lista = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59}
+    fibonacci_lista = {1, 2, 3, 5, 8, 13, 21, 34, 55}
+    
+    qtd_primos = len(set(numeros_usuario).intersection(primos_lista))
+    qtd_fibonacci = len(set(numeros_usuario).intersection(fibonacci_lista))
+    
+    series_atrasos = calcular_atrasos(df_dezenas)
+    atrasos_jogo = {n: series_atrasos.get(n, 0) for n in numeros_usuario}
+    
+    ciclo_atual, _, faltam_no_ciclo = analisar_ciclo(df_dezenas)
+    numeros_do_ciclo = set(numeros_usuario).intersection(set(faltam_no_ciclo))
+    
+    ultimo_sorteio = set(df_dezenas.iloc[-1].dropna().astype(int))
+    repetidos_ultimo = len(set(numeros_usuario).intersection(ultimo_sorteio))
+    
+    freq_total = stats['frequencia']
+    frequencia_jogo = {n: freq_total.get(n, 0) for n in numeros_usuario}
+
+    prompt = f"""
+    Você é um especialista em loterias analisando um jogo específico sugerido por um usuário para a Mega-Sena.
+    
+    **JOGO DO USUÁRIO:** {numeros_usuario}
+    
+    **ANÁLISE TÉCNICA DO JOGO:**
+    1. **Estrutura Básica:**
+       - Soma: {soma} (Média histórica é aprox. 183)
+       - Pares: {pares} | Ímpares: {impares} (Equilíbrio ideal é 3/3 ou 4/2)
+       
+    2. **Padrões Avançados:**
+       - Primos: {qtd_primos} (Média histórica: 1 a 2)
+       - Fibonacci: {qtd_fibonacci} (Média histórica: 0 a 1)
+       - Repetidos do último concurso: {repetidos_ultimo} (Média histórica: 0 a 1)
+       
+    3. **Status dos Números (Contexto Atual):**
+       - Atrasos (há quantos jogos não saem): {atrasos_jogo}
+       - Frequência histórica (vezes que já saíram): {frequencia_jogo}
+       - Números que fecham o ciclo atual: {list(numeros_do_ciclo)} (Se houver algum, é um ponto forte).
+       
+    **SUA TAREFA:**
+    Aja como um consultor amigável e sincero. Analise esse jogo:
+    
+    1. **O que está bom?** (Ex: equilíbrio par/ímpar, uso de números do ciclo, mistura de quentes/frios).
+    2. **O que é arriscado?** (Ex: soma muito alta/baixa, muitos números seguidos, muitos primos, números muito atrasados que nunca saem).
+    3. **Veredito:** Dê uma nota de 0 a 10 para esse jogo e uma sugestão rápida de melhoria (ex: "Troque o número X pelo Y para equilibrar a soma").
+    """
+    
+    print("\n--- Enviando para análise do Gemini... ---")
+    try:
+        model = genai.GenerativeModel('gemini-flash-latest')
+        response = model.generate_content(prompt)
+        
+        console = Console()
+        print("\n" + "="*40)
+        print(f"ANÁLISE DO JOGO: {numeros_usuario}")
+        print("="*40)
+        
+        md = Markdown(response.text)
+        console.print(md)
+        
+    except Exception as e:
+        print(f"Erro na conexão com Gemini: {e}")
+
 def menu():
     caminho = "megasena.csv"
     
@@ -326,7 +420,8 @@ def menu():
         print("8. Ciclo das Dezenas (Métrica de Especialista)")
         print("9. Análise de Repetência (Dejà vu)")
         print("10. Filtros de Primos e Fibonacci")
-        print("11. Sair")
+        print("11. Analisar Meu Jogo")
+        print("12. Sair")
         
         escolha = input("\nEscolha uma opção: ")
         
@@ -372,6 +467,8 @@ def menu():
         elif escolha == '10':
             gerar_grafico_primos_fibonacci(df_dezenas)
         elif escolha == '11':
+            analisar_jogo_usuario(df_dezenas, stats)
+        elif escolha == '12':
             print("Jogue conscientemente! Boa sorte!")
             break
         else:
