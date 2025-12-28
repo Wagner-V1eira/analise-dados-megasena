@@ -72,7 +72,7 @@ Para utilizar as funcionalidades de IA, você precisará de uma chave de API do 
 O arquivo `.env` deve ficar assim:
 
 ```env
-GOOGLE_API_KEY=AIzaSyBLHpvr6hOT7k9p7OmoeFRpn8mzWeI_2Zw...
+GOOGLE_API_KEY=Sua_Chave_Secreta_Aqui
 ```
 
 > **Nota:** O arquivo `.env` contém informações sensíveis e **não deve** ser compartilhado ou enviado para o GitHub. Ele já está configurado no `.gitignore` para ser ignorado.
